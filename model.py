@@ -70,6 +70,9 @@ class CausalSelfAttention(nn.Module):
         elif (self.kvcache):
             self.K = torch.cat((self.K, k), dim=2).to(x.device)
             self.V = torch.cat((self.V, v), dim=2).to(x.device)
+        else:
+            self.K = k
+            self.V = v
 
         # causal self-attention; Self-attend: (B, nh, T, hs) x (B, nh, hs, T) -> (B, nh, T, T)
         if self.flash:
@@ -332,7 +335,7 @@ class GPT(nn.Module):
         the sequence max_new_tokens times, feeding the predictions back into the model each time.
         Most likely you'll want to make sure to be in model.eval() mode of operation for this.
         """
-        
+
         for _ in range(max_new_tokens):
             # if the sequence context is growing too long we must crop it at block_size
             idx_cond = idx if idx.size(1) <= self.config.block_size else idx[:, -self.config.block_size:]
