@@ -199,7 +199,13 @@ class GPT(nn.Module):
         device = idx.device
         b, t = idx.size()
         assert t <= self.config.block_size, f"Cannot forward sequence of length {t}, block size is only {self.config.block_size}"
-        pos = torch.arange(self.currentToken, t, dtype=torch.long, device=device) # shape (t)
+        # pos = torch.arange(self.currentToken, t, dtype=torch.long, device=device) # shape (t)
+        idx = idx[:, self.currentToken:]
+        if self.kvcache:
+            pos = torch.arange(self.currentToken, t, dtype=torch.long, device=device)
+            self.currentToken = t
+        else:
+            pos = torch.arange(0, t, dtype=torch.long, device=device)
 
         # forward the GPT model itself
         tok_emb = self.transformer.wte(idx) # token embeddings of shape (b, t, n_embd)
@@ -217,8 +223,6 @@ class GPT(nn.Module):
             # inference-time mini-optimization: only forward the lm_head on the very last position
             logits = self.lm_head(x[:, [-1], :]) # note: using list [-1] to preserve the time dim
             loss = None
-        
-        self.currentToken = t
 
         return logits, loss
 
