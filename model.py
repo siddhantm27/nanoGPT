@@ -83,6 +83,7 @@ class CausalSelfAttention(nn.Module):
             att = (q @ self.K.transpose(-2, -1)) * (1.0 / math.sqrt(self.K.size(-1)))
 
             if self.kvcache:
+                print(att.shape, self.bias[:,:,-T:,-self.K.size(2):].shape)
                 # if using cache, we only need to apply the causal mask to the last query position
                 att = att.masked_fill(self.bias[:,:,-T:,-self.K.size(2):] == 0, float('-inf'))
             else:
