@@ -81,10 +81,13 @@ class CausalSelfAttention(nn.Module):
         else:
             # manual implementation of attention
             att = (q @ self.K.transpose(-2, -1)) * (1.0 / math.sqrt(self.K.size(-1)))
-            # att = att.masked_fill(self.bias[:,:,:T,:T] == 0, float('-inf'))
+
             if self.kvcache:
                 # if using cache, we only need to apply the causal mask to the last query position
                 att = att.masked_fill(self.bias[:,:,-T:,-self.K.size(2):] == 0, float('-inf'))
+            else:
+                # if not using cache, we apply the causal mask to all query positions
+                att = att.masked_fill(self.bias[:,:,:T,:T] == 0, float('-inf'))
                 
             att = F.softmax(att, dim=-1)
             att = self.attn_dropout(att)
@@ -134,7 +137,7 @@ class GPTConfig:
     n_embd: int = 768
     dropout: float = 0.0
     bias: bool = True # True: bias in Linears and LayerNorms, like GPT-2. False: a bit better and faster
-    cache: bool = False
+    cache: bool = True
     flash: bool = False
 
 
